@@ -37,7 +37,9 @@ qshObject.Cookies.set('openid', '123');
 ####qsh_no_fastclick
 由于页面默认会调用[fastclick](https://github.com/ftlabs/fastclick)会使日期控件出现异常
 如果页面不需要fastclick，需要在头部添加一个变量
+```js
 <script>var qsh_no_fastclick = true</script>
+```
 
 
 ####weixin_openid_promise
