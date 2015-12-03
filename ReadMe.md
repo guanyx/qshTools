@@ -33,3 +33,22 @@ cookie(Cookies)
 ```javascript
 qshObject.Cookies.set('openid', '123');
 ```
+
+####qsh_no_fastclick
+由于页面默认会调用[fastclick](https://github.com/ftlabs/fastclick)会使日期控件出现异常
+如果页面不需要fastclick，需要在头部添加一个变量
+<script>var qsh_no_fastclick = true</script>
+
+
+####weixin_openid_promise
+在微信中打开手机站且当前域名为m.8673h.com时。会自动发起静默授权，获取用户的openid，并将openid写入cookie。
+weixin_openid_promise是一个jquery Deferred对象
+当页面需要用户登录时。可通过
+```js
+weixin_openid_promise.then(function(openid){
+    //openid为null 代表非微信平台或非m.8673h.com域名
+    //否则，openid为当前用户的openid
+}, function(err){
+    //获取用户openid失败
+})
+```
