@@ -1,6 +1,6 @@
 'use strict';
 
-import {shell, isAndroid} from "./device.js";
+import {shell, isAndroid, isIOS} from "./device.js";
 
 var app = null;
 var increase = 0;
@@ -55,6 +55,37 @@ if(shell === 'qsh' && isAndroid){
     app.toast = function(msg){
         app.apply('Message.toast', msg);
     };
+}
+
+if(shell === 'qsh' && isIOS){
+    app = {};
+    app.back = function(){
+        history.back();
+    };
+
+    /**
+    * order_id: Date.now() + '123',
+    * goods_name: '测试商品',
+    * goods_description: '测试商品描述',
+    * amounts: '0.01'
+    **/
+    app.alipayOrder = function(obj, cb){
+        var iframe = $('<iframe></iframe>');
+        iframe.attr('src', 'qsh://alipayOrder:?' + JSON.stringify(obj));
+        iframe.hide();
+        iframe.appendTo(document.body);
+
+        window.alipayResult = cb;
+    }
+
+    app.wxpayOrder = function(obj, cb){
+        var iframe = $('<iframe></iframe>');
+        iframe.attr('src', 'qsh://wxpayOrder:?' + JSON.stringify(obj));
+        iframe.hide();
+        iframe.appendTo(document.body);
+
+        window.wxpayResult = cb;
+    }
 }
 
 export default app;

@@ -63,7 +63,8 @@ var options = {
 <pre>
 mount: 挂载点。即head的父级元素
 name: 名称。 即中间部分的title
-style: 样式。 可不传，默认为卖家版的浅灰色头部。custom为买家版的红色头部
+fixed: false | true; 默认为true，头部锁定在顶部
+type: 2; mount必传，并推荐为一个空的div，不带任何样式
 leftItems: 坐边元素。可不传。默认会带有一个返回
     itemObj： icon: icon为iconfont中图标对应的名称。返回图标的icon固定为back。
               fixed: 布尔类型，默认头部会固定在顶部

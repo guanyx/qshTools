@@ -5,6 +5,7 @@ import Cookies from 'js-cookie';
 import fastclick from 'fastclick';
 
 import * as device from "./support/device.js";
+import APP from './support/APP.js';
 import sourceLoad from "./util/sourceLoad.js";
 import wechat from './wechat/wechat.js';
 import toast from './toast/toast.js';
@@ -38,6 +39,7 @@ import preHeader from "./header/js/preHead.js";
 var qshObject = {};
 
 qshObject = $.extend(qshObject, device);
+qshObject.APP = APP;
 qshObject.sourceLoad = sourceLoad;
 qshObject.wechat = wechat;
 qshObject.toast = toast;

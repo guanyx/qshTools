@@ -98,7 +98,22 @@ var preMenu = {
 class Header{
     constructor(options){
         this.options = options;
-        this.container = $(compileTpl(template_structure, options)).appendTo($(options.mount) || document.body);
+
+        if(options.type === 2){
+            if(!options.mount){
+                alert('头部参数缺失mount');
+                return;
+            }
+
+            var $mount = $(options.mount);
+            this.container = $(compileTpl(template_structure, options)).appendTo($mount);
+            $mount.css('height', '45px');
+        }
+        else {
+            this.container = $(compileTpl(template_structure, options)).appendTo($(options.mount) || document.body);
+        }
+
+
         //不使用fixed定位头部
         if(options.fixed === false){
             this.container.css({

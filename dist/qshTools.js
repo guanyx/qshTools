@@ -62,55 +62,59 @@
 
 	var device = _interopRequireWildcard(_supportDeviceJs);
 
-	var _utilSourceLoadJs = __webpack_require__(4);
+	var _supportAPPJs = __webpack_require__(4);
+
+	var _supportAPPJs2 = _interopRequireDefault(_supportAPPJs);
+
+	var _utilSourceLoadJs = __webpack_require__(5);
 
 	var _utilSourceLoadJs2 = _interopRequireDefault(_utilSourceLoadJs);
 
-	var _wechatWechatJs = __webpack_require__(5);
+	var _wechatWechatJs = __webpack_require__(6);
 
 	var _wechatWechatJs2 = _interopRequireDefault(_wechatWechatJs);
 
-	var _toastToastJs = __webpack_require__(6);
+	var _toastToastJs = __webpack_require__(7);
 
 	var _toastToastJs2 = _interopRequireDefault(_toastToastJs);
 
-	var _utilQueryStringJs = __webpack_require__(11);
+	var _utilQueryStringJs = __webpack_require__(12);
 
 	var _utilQueryStringJs2 = _interopRequireDefault(_utilQueryStringJs);
 
-	var _ajaxAjaxJs = __webpack_require__(12);
+	var _ajaxAjaxJs = __webpack_require__(13);
 
 	var _ajaxAjaxJs2 = _interopRequireDefault(_ajaxAjaxJs);
 
-	var _utilCompileTplJs = __webpack_require__(7);
+	var _utilCompileTplJs = __webpack_require__(8);
 
 	var _utilCompileTplJs2 = _interopRequireDefault(_utilCompileTplJs);
 
-	var _utilValidEmailJs = __webpack_require__(13);
+	var _utilValidEmailJs = __webpack_require__(14);
 
 	var _utilValidEmailJs2 = _interopRequireDefault(_utilValidEmailJs);
 
-	var _utilValidCardJs = __webpack_require__(14);
+	var _utilValidCardJs = __webpack_require__(15);
 
 	var _utilValidCardJs2 = _interopRequireDefault(_utilValidCardJs);
 
-	var _utilValidTelJs = __webpack_require__(15);
+	var _utilValidTelJs = __webpack_require__(16);
 
 	var _utilValidTelJs2 = _interopRequireDefault(_utilValidTelJs);
 
-	var _utilValidMobileJs = __webpack_require__(16);
+	var _utilValidMobileJs = __webpack_require__(17);
 
 	var _utilValidMobileJs2 = _interopRequireDefault(_utilValidMobileJs);
 
-	var _utilGoRegisterJs = __webpack_require__(17);
+	var _utilGoRegisterJs = __webpack_require__(18);
 
 	var _utilGoRegisterJs2 = _interopRequireDefault(_utilGoRegisterJs);
 
-	var _utilGoLoginJs = __webpack_require__(19);
+	var _utilGoLoginJs = __webpack_require__(20);
 
 	var _utilGoLoginJs2 = _interopRequireDefault(_utilGoLoginJs);
 
-	var _utilBackJs = __webpack_require__(20);
+	var _utilBackJs = __webpack_require__(21);
 
 	var _utilBackJs2 = _interopRequireDefault(_utilBackJs);
 
@@ -142,7 +146,7 @@
 
 	var _footerJsFooterJs2 = _interopRequireDefault(_footerJsFooterJs);
 
-	var _assetUrlsJs = __webpack_require__(18);
+	var _assetUrlsJs = __webpack_require__(19);
 
 	var _assetUrlsJs2 = _interopRequireDefault(_assetUrlsJs);
 
@@ -175,6 +179,7 @@
 	var qshObject = {};
 
 	qshObject = $.extend(qshObject, device);
+	qshObject.APP = _supportAPPJs2['default'];
 	qshObject.sourceLoad = _utilSourceLoadJs2['default'];
 	qshObject.wechat = _wechatWechatJs2['default'];
 	qshObject.toast = _toastToastJs2['default'];
@@ -1368,6 +1373,107 @@
 
 /***/ },
 /* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	    value: true
+	});
+
+	var _deviceJs = __webpack_require__(3);
+
+	var app = null;
+	var increase = 0;
+
+	if (_deviceJs.shell === 'qsh' && _deviceJs.isAndroid) {
+	    app = {
+	        queue: {}, //方法与回调映射
+	        callback: function callback() {
+	            var data = Array.prototype.slice.call(arguments, 0);
+	            var method = data.shift(); //回调方法名
+	            var times = data.shift(); //是否会回调多次，长任务可能需要回调多次返回状态
+	            this.queue[method].apply(this, data);
+	            if (!times) {
+	                delete this.queue(method);
+	            }
+	        }
+	    };
+
+	    //调用通用方法，第一个参数会方法名
+	    app.apply = function (method) {
+	        var data = Array.prototype.slice.call(arguments, 0);
+	        if (data.length < 1) {
+	            throw "APP call error, message:miss method name"; //需要方法名
+	        }
+
+	        var types = data.map(function (param, index) {
+	            var type = typeof param;
+	            var fake_name = method + increase; //回调的假名
+
+	            if ('function' === type) {
+	                app.queue[fake_name] = param;
+	                data[index] = fake_name;
+	            }
+
+	            return type;
+	        });
+
+	        increase++;
+
+	        var result = JSON.parse(prompt(JSON.stringify({ method: data.shift(), args: data })));
+	        if (result.code != 200) {
+	            throw "APP call error, code:" + result.code + ", message:" + result.result;
+	        }
+	        return result.result;
+	    };
+
+	    //返回的示例
+	    app.back = function (num) {
+	        app.apply('History.back', num);
+	    };
+
+	    app.toast = function (msg) {
+	        app.apply('Message.toast', msg);
+	    };
+	}
+
+	if (_deviceJs.shell === 'qsh' && _deviceJs.isIOS) {
+	    app = {};
+	    app.back = function () {
+	        history.back();
+	    };
+
+	    /**
+	    * order_id: Date.now() + '123',
+	    * goods_name: '测试商品',
+	    * goods_description: '测试商品描述',
+	    * amounts: '0.01'
+	    **/
+	    app.alipayOrder = function (obj, cb) {
+	        var iframe = $('<iframe></iframe>');
+	        iframe.attr('src', 'qsh://alipayOrder:?' + JSON.stringify(obj));
+	        iframe.hide();
+	        iframe.appendTo(document.body);
+
+	        window.alipayResult = cb;
+	    };
+
+	    app.wxpayOrder = function (obj, cb) {
+	        var iframe = $('<iframe></iframe>');
+	        iframe.attr('src', 'qsh://wxpayOrder:?' + JSON.stringify(obj));
+	        iframe.hide();
+	        iframe.appendTo(document.body);
+
+	        window.wxpayResult = cb;
+	    };
+	}
+
+	exports['default'] = app;
+	module.exports = exports['default'];
+
+/***/ },
+/* 5 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1439,7 +1545,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1453,7 +1559,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _utilSourceLoadJs = __webpack_require__(4);
+	var _utilSourceLoadJs = __webpack_require__(5);
 
 	var _utilSourceLoadJs2 = _interopRequireDefault(_utilSourceLoadJs);
 
@@ -1476,7 +1582,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1488,13 +1594,13 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _utilCompileTplJs = __webpack_require__(7);
+	var _utilCompileTplJs = __webpack_require__(8);
 
 	var _utilCompileTplJs2 = _interopRequireDefault(_utilCompileTplJs);
 
-	var loading_tpl = __webpack_require__(8);
-	var common_tpl = __webpack_require__(9);
-	var warn_tpl = __webpack_require__(10);
+	var loading_tpl = __webpack_require__(9);
+	var common_tpl = __webpack_require__(10);
+	var warn_tpl = __webpack_require__(11);
 
 	var tpl_map = {
 	    loading: loading_tpl,
@@ -1558,7 +1664,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1587,25 +1693,25 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=weui_loading_toast><div class=weui_mask_transparent></div><div class=weui_toast><div class=weui_loading><div class=\"weui_loading_leaf weui_loading_leaf_0\"></div><div class=\"weui_loading_leaf weui_loading_leaf_1\"></div><div class=\"weui_loading_leaf weui_loading_leaf_2\"></div><div class=\"weui_loading_leaf weui_loading_leaf_3\"></div><div class=\"weui_loading_leaf weui_loading_leaf_4\"></div><div class=\"weui_loading_leaf weui_loading_leaf_5\"></div><div class=\"weui_loading_leaf weui_loading_leaf_6\"></div><div class=\"weui_loading_leaf weui_loading_leaf_7\"></div><div class=\"weui_loading_leaf weui_loading_leaf_8\"></div><div class=\"weui_loading_leaf weui_loading_leaf_9\"></div><div class=\"weui_loading_leaf weui_loading_leaf_10\"></div><div class=\"weui_loading_leaf weui_loading_leaf_11\"></div></div><p class=weui_toast_content>{{content}}</p></div></div>";
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports) {
 
 	module.exports = "<div><div class=weui_mask_transparent></div><div class=weui_toast><i class=weui_icon_toast></i><p class=weui_toast_content>{{content}}</p></div></div>";
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports) {
 
 	module.exports = "<div><div class=weui_mask_transparent></div><div class=weui_toast><i class=qsh_icon_warn></i><p class=weui_toast_content>{{content}}</p></div></div>";
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1626,7 +1732,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1678,7 +1784,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1696,7 +1802,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1844,7 +1950,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1862,7 +1968,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1880,7 +1986,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1892,7 +1998,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _assetUrlsJs = __webpack_require__(18);
+	var _assetUrlsJs = __webpack_require__(19);
 
 	var _assetUrlsJs2 = _interopRequireDefault(_assetUrlsJs);
 
@@ -1903,7 +2009,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1942,7 +2048,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1954,43 +2060,12 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _assetUrlsJs = __webpack_require__(18);
+	var _assetUrlsJs = __webpack_require__(19);
 
 	var _assetUrlsJs2 = _interopRequireDefault(_assetUrlsJs);
 
 	function goLogin() {
 	    location.replace(_assetUrlsJs2['default'].login + '?url=' + encodeURIComponent(location.href));
-	}
-
-	module.exports = exports['default'];
-
-/***/ },
-/* 20 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, '__esModule', {
-	    value: true
-	});
-	exports['default'] = back;
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-	var _supportDeviceJs = __webpack_require__(3);
-
-	var _supportAPPJs = __webpack_require__(21);
-
-	var _supportAPPJs2 = _interopRequireDefault(_supportAPPJs);
-
-	function back(num) {
-	    num = num || -1;
-	    if (_supportDeviceJs.shell === 'qsh' && _supportDeviceJs.isAndroid) {
-	        //调用APP接口返回
-	        _supportAPPJs2['default'].back(num);
-	    } else {
-	        history.back();
-	    }
 	}
 
 	module.exports = exports['default'];
@@ -2004,65 +2079,26 @@
 	Object.defineProperty(exports, '__esModule', {
 	    value: true
 	});
+	exports['default'] = back;
 
-	var _deviceJs = __webpack_require__(3);
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var app = null;
-	var increase = 0;
+	var _supportDeviceJs = __webpack_require__(3);
 
-	if (_deviceJs.shell === 'qsh' && _deviceJs.isAndroid) {
-	    app = {
-	        queue: {}, //方法与回调映射
-	        callback: function callback() {
-	            var data = Array.prototype.slice.call(arguments, 0);
-	            var method = data.shift(); //回调方法名
-	            var times = data.shift(); //是否会回调多次，长任务可能需要回调多次返回状态
-	            this.queue[method].apply(this, data);
-	            if (!times) {
-	                delete this.queue(method);
-	            }
-	        }
-	    };
+	var _supportAPPJs = __webpack_require__(4);
 
-	    //调用通用方法，第一个参数会方法名
-	    app.apply = function (method) {
-	        var data = Array.prototype.slice.call(arguments, 0);
-	        if (data.length < 1) {
-	            throw "APP call error, message:miss method name"; //需要方法名
-	        }
+	var _supportAPPJs2 = _interopRequireDefault(_supportAPPJs);
 
-	        var types = data.map(function (param, index) {
-	            var type = typeof param;
-	            var fake_name = method + increase; //回调的假名
-
-	            if ('function' === type) {
-	                app.queue[fake_name] = param;
-	                data[index] = fake_name;
-	            }
-
-	            return type;
-	        });
-
-	        increase++;
-
-	        var result = JSON.parse(prompt(JSON.stringify({ method: data.shift(), args: data })));
-	        if (result.code != 200) {
-	            throw "APP call error, code:" + result.code + ", message:" + result.result;
-	        }
-	        return result.result;
-	    };
-
-	    //返回的示例
-	    app.back = function (num) {
-	        app.apply('History.back', num);
-	    };
-
-	    app.toast = function (msg) {
-	        app.apply('Message.toast', msg);
-	    };
+	function back(num) {
+	    num = num || -1;
+	    if (_supportDeviceJs.shell === 'qsh' && _supportDeviceJs.isAndroid) {
+	        //调用APP接口返回
+	        _supportAPPJs2['default'].back(num);
+	    } else {
+	        history.back();
+	    }
 	}
 
-	exports['default'] = app;
 	module.exports = exports['default'];
 
 /***/ },
@@ -2259,7 +2295,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _utilCompileTplJs = __webpack_require__(7);
+	var _utilCompileTplJs = __webpack_require__(8);
 
 	var _utilCompileTplJs2 = _interopRequireDefault(_utilCompileTplJs);
 
@@ -2341,11 +2377,11 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
-	var _assetUrlsJs = __webpack_require__(18);
+	var _assetUrlsJs = __webpack_require__(19);
 
 	var _assetUrlsJs2 = _interopRequireDefault(_assetUrlsJs);
 
-	var _utilCompileTplJs = __webpack_require__(7);
+	var _utilCompileTplJs = __webpack_require__(8);
 
 	var _utilCompileTplJs2 = _interopRequireDefault(_utilCompileTplJs);
 
@@ -2426,17 +2462,17 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _assetUrlsJs = __webpack_require__(18);
+	var _assetUrlsJs = __webpack_require__(19);
 
 	var _assetUrlsJs2 = _interopRequireDefault(_assetUrlsJs);
 
 	var _supportDeviceJs = __webpack_require__(3);
 
-	var _supportAPPJs = __webpack_require__(21);
+	var _supportAPPJs = __webpack_require__(4);
 
 	var _supportAPPJs2 = _interopRequireDefault(_supportAPPJs);
 
-	var _toastToastJs = __webpack_require__(6);
+	var _toastToastJs = __webpack_require__(7);
 
 	var _toastToastJs2 = _interopRequireDefault(_toastToastJs);
 
@@ -2553,7 +2589,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _utilCompileTplJs = __webpack_require__(7);
+	var _utilCompileTplJs = __webpack_require__(8);
 
 	var _utilCompileTplJs2 = _interopRequireDefault(_utilCompileTplJs);
 
@@ -2603,11 +2639,11 @@
 
 	var _spinnerSpinnerJs = __webpack_require__(34);
 
-	var _ajaxAjaxJs = __webpack_require__(12);
+	var _ajaxAjaxJs = __webpack_require__(13);
 
 	var _ajaxAjaxJs2 = _interopRequireDefault(_ajaxAjaxJs);
 
-	var _utilCompileTplJs = __webpack_require__(7);
+	var _utilCompileTplJs = __webpack_require__(8);
 
 	var _utilCompileTplJs2 = _interopRequireDefault(_utilCompileTplJs);
 
@@ -2685,15 +2721,15 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-	var _assetUrlsJs = __webpack_require__(18);
+	var _assetUrlsJs = __webpack_require__(19);
 
 	var _assetUrlsJs2 = _interopRequireDefault(_assetUrlsJs);
 
-	var _utilCompileTplJs = __webpack_require__(7);
+	var _utilCompileTplJs = __webpack_require__(8);
 
 	var _utilCompileTplJs2 = _interopRequireDefault(_utilCompileTplJs);
 
-	var _utilBackJs = __webpack_require__(20);
+	var _utilBackJs = __webpack_require__(21);
 
 	var _utilBackJs2 = _interopRequireDefault(_utilBackJs);
 
@@ -2789,7 +2825,20 @@
 	        _classCallCheck(this, Header);
 
 	        this.options = options;
-	        this.container = $((0, _utilCompileTplJs2['default'])(template_structure, options)).appendTo($(options.mount) || document.body);
+
+	        if (options.type === 2) {
+	            if (!options.mount) {
+	                alert('头部参数缺失mount');
+	                return;
+	            }
+
+	            var $mount = $(options.mount);
+	            this.container = $((0, _utilCompileTplJs2['default'])(template_structure, options)).appendTo($mount);
+	            $mount.css('height', '45px');
+	        } else {
+	            this.container = $((0, _utilCompileTplJs2['default'])(template_structure, options)).appendTo($(options.mount) || document.body);
+	        }
+
 	        //不使用fixed定位头部
 	        if (options.fixed === false) {
 	            this.container.css({
@@ -3125,7 +3174,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
-	var _assetUrlsJs = __webpack_require__(18);
+	var _assetUrlsJs = __webpack_require__(19);
 
 	var _assetUrlsJs2 = _interopRequireDefault(_assetUrlsJs);
 
